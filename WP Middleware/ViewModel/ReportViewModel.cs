@@ -12,10 +12,19 @@ namespace WP_Middleware.ViewModel
         public double ClockIn { get; set; }
         public double ClockOut { get; set; }
         public double TotalTime { get; set; }
-        public long TaskCreated { get; set; }
-        public long DueDate { get; set; }
+        public double TaskCreated { get; set; }
+        public Nullable<long> DueDate { get; set; }
         public long PayRate { get; set; }
         public double TimezoneOffset { get; set; }
         public int Count { get; set; }
+        public string TimeZone { get; set; }
+        public DateTime DateNow { get; set; }
+        public string Fdate { get; set; }
+        public string Tdate { get; set; }
+
+        public List<ReportViewModel> ReportView { get; set; }
+        public List<EmployeeDate> Add { get; set; }
+        public List<EmployeeDate> Exit { get; set; }
+
     }
 }

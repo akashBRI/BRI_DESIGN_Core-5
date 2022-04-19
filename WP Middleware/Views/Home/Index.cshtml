@@ -12,6 +12,12 @@
             <input type="text" id="Date" name="Date" placeholder="Date" autocomplete="off">
         </div>
         <div class="field">
+            <label>Team</label>
+            <select class="ui search dropdown team" id="Team" name="Team">
+                <option value="">Select a team</option>
+            </select>
+        </div>
+        <div class="field">
             <label>Employee</label>
             <select class="ui search dropdown employee" id="Employee" name="Employee">
                 <option value="">Select a employee</option>
@@ -38,10 +44,12 @@
     </div>
 
     <div class="ui error message"></div>
+    <input type="hidden" id="Fdate" name="Fdate" />
+    <input type="hidden" id="Tdate" name="Tdate" />
 </form>
-<div class="">
+<div class="repdiv" style="display:none;">
 
-    <table class="ui blue small table repdiv" id="tblreport" style="width:100%;display:none;">
+    <table class="ui small table blue" id="tblreport" style="width:100%;">
         <thead>
             <tr>
                 <th scope="col">#</th>
@@ -86,7 +94,7 @@
                     startDate: moment(),
                     endDate: moment(),
                     locale: {
-                        format: 'DD/MM/YYYY'
+                        format: 'MM/DD/YYYY hh:mm A'
                     }
                 });
             });
@@ -98,12 +106,35 @@
         $(document).ready(function () {
             $(".repdiv").hide();
             $('.dropdown').dropdown();
-
+            GetTeam();
             GetEmployees();
             GetProjects();
             GetTasks();
             FormSubmit();
+
+            var Employee = null;
         });
+
+        $("#Team").change(function () {
+            var id = this.value;
+            var firstDropVal = $('#Team').val();
+            GetEmployeeByTeam(id);
+        });
+
+        function GetTeam() {
+            $(".team").addClass('loading');
+            $.ajax({
+                url: "../api/Team",
+                type: 'GET',
+                dataType: 'json', // added data type
+                success: function (res) {
+                    $.each(res, function (key, value) {
+                        $("#Team").append('<option value=' + value.id + '>' + value.name + '</option>');
+                    });
+                    $(".team").removeClass('loading');
+                }
+            });
+        }
 
         function GetEmployees() {
             $(".employee").addClass('loading');
@@ -112,6 +143,7 @@
                 type: 'GET',
                 dataType: 'json', // added data type
                 success: function (res) {
+                    Employee = res;
                     $.each(res, function (key, value) {
                         if (value.deactivated == 0) {
                             $("#Employee").append('<option value=' + value.id + '>' + value.name + '</option>');
@@ -120,6 +152,19 @@
                     $(".employee").removeClass('loading');
                 }
             });
+        }
+
+        function GetEmployeeByTeam(id) {
+            $(".employee").addClass('loading');
+            $("#Employee").empty();
+            $('#Employee').dropdown('clear');
+            $("#Employee").append('<option value="">Select a employee</option>');
+            $.each(Employee, function (key, value) {
+                if (value.teamId == id && value.deactivated == 0) {
+                    $("#Employee").append('<option value=' + value.id + '>' + value.name + '</option>');
+                }
+            });
+            $(".employee").removeClass('loading');
         }
 
         function GetProjects() {
@@ -188,6 +233,11 @@
                     },
                     onSuccess: function (event, fields) {
                         event.preventDefault();
+                        var date = $('#Date').val();
+                        var fdate = new Date(date.substring(0, 19)).getTime();
+                        var tdate = new Date(date.substring(22, 42)).getTime();
+                        $('#Fdate').val(fdate);
+                        $('#Tdate').val(tdate);
                         var report = $("#report").serialize();
                         $(".form").addClass('loading');
                         $(".repdiv").hide();
@@ -199,11 +249,12 @@
                             dataType: "json",
                             encode: true,
                         }).done(function (data) {
+                            var ful = data.reportView;
                             $(".form").removeClass('loading');
                             var i = 1;
                             var t = $("#tblreport").DataTable({
                                 "bDestroy": true,
-                                "data": data,
+                                "data": data.reportView,
                                 "searching": false,
                                 "paging": false,
                                 "ordering": false,
@@ -212,7 +263,12 @@
                                 "dom": 'Bfrtip',
                                 "buttons": ['excel', 'pdf', 'print'],
                                 "columns": [
-                                    { "data": "count" },
+                                    {
+                                        "render": function (data, type, full, meta) {
+                                            var idx = ful.indexOf(full);
+                                            return idx + 1;
+                                        }
+                                    },
                                     { "data": "taskName" },
                                     { "data": "assignedTo" },
                                     {
@@ -262,11 +318,17 @@
                                     {
                                         "render": function (data, type, full, meta) {
                                             var due = full.dueDate;
-                                            var to = full.timezoneOffset;
-                                            var tot = due + to;
-                                            var date = new Date(tot).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
-                                            let result = date.toString().substring(0, 8);
-                                            return result;
+                                            if (due != 0) {
+                                                var to = full.timezoneOffset;
+                                                var tot = due + to;
+                                                var date = new Date(tot).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+                                                let result = date.toString();
+                                                const myArray = result.split(",");
+                                                return myArray[0];
+                                            } else {
+                                                return "<div class='ui teal horizontal label'>Due Date Missing</div>";
+                                            }
+                                           
                                         }
                                     },
                                     { "data": "payRate" }

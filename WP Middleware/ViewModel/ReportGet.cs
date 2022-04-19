@@ -8,8 +8,11 @@ namespace WP_Middleware.ViewModel
     public class ReportGet
     {
         public string Date { get; set; }
+        public string Team { get; set; }
         public string Employee { get; set; }
         public string Project { get; set; }
         public string Task { get; set; }
+        public long Fdate { get; set; }
+        public long Tdate { get; set; }
     }
 }

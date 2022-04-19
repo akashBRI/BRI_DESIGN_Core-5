@@ -17,7 +17,7 @@ namespace WP_Middleware.ViewModel
         public string type { get; set; }
         public string organizationId { get; set; }
         public List<object> projects { get; set; }
-        public int deactivated { get; set; }
+        public long deactivated { get; set; }
         public long invited { get; set; }
         public long createdAt { get; set; }
     }
